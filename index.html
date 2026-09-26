@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Permissions Policy 实验室：摄像头/麦克风/定位/全屏/自动播放</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Permissions Policy 实验室</h1>
+      <p class="subtitle">摄像头 · 麦克风 · 地理位置 · 全屏 · 自动播放 ｜ Permissions Policy + Permissions API + iframe + Web Worker + IndexedDB + Canvas</p>
+    </div>
+    <div id="env-badges" class="env-badges"></div>
+  </header>
+
+  <div id="alert-zone" class="alert-zone" hidden></div>
+
+  <main class="layout">
+    <!-- 左栏：配置 -->
+    <section class="panel panel-config">
+      <h2>① 顶层 Permissions-Policy 头</h2>
+      <p class="hint">
+        响应头作用于顶层页面，并通过 <code>allow</code> 委托形成“双层门”。
+        点击“应用并下发”会同步给 Service Worker 并重新加载右侧沙箱框架，让<strong>真实 HTTP 头</strong>生效。
+      </p>
+      <textarea id="header-input" class="header-input" spellcheck="false" rows="3"
+        placeholder='camera=(self); microphone=(); geolocation=("https://example.com"); fullscreen=*; autoplay=(self)'></textarea>
+      <div class="row gap">
+        <button id="btn-apply" class="primary">应用并下发（SW 注入 + 重载框架）</button>
+        <button id="btn-validate">仅语法校验（Worker）</button>
+      </div>
+      <div id="header-feedback" class="feedback"></div>
+      <div class="presets">
+        <span class="preset-label">预设：</span>
+        <button data-preset="allAllow">全部允许</button>
+        <button data-preset="allDeny">全部拒绝</button>
+        <button data-preset="mixed">混合（仅同源/特例）</button>
+        <button data-preset="broken">错误语法演示</button>
+      </div>
+
+      <h2>② iframe allow 委托矩阵</h2>
+      <p class="hint">
+        每个 token 表示父框架向下一帧的委托：<code>*</code> 允许、<code>'none'</code> 拒绝、
+        <code>'self'</code> 同源、<code>inherit</code> 不写 allow（同源时继承父级）。
+      </p>
+      <div class="table-wrap">
+        <table class="matrix" id="matrix-table">
+          <thead>
+            <tr>
+              <th>特性</th>
+              <th>顶层 → A 的 allow</th>
+              <th>A → B 的 allow</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="row gap">
+        <button id="btn-reload-frames" class="primary">重建 iframe 树并检测</button>
+        <button id="btn-reset-inherit">全部恢复 inherit</button>
+      </div>
+      <div class="allow-preview">
+        <div>A 的 allow：<code id="allow-a-preview"></code></div>
+        <div>B 的 allow：<code id="allow-b-preview"></code></div>
+      </div>
+
+      <h2>③ Service Worker</h2>
+      <div id="sw-status" class="sw-status">检测中…</div>
+      <div class="row gap">
+        <button id="btn-sw-register">注册 / 更新 SW</button>
+        <button id="btn-sw-reload">SW 生效后重开沙箱</button>
+      </div>
+      <p class="hint" id="sw-fallback-note" hidden>
+        SW 不可用时：沙箱无法演示真实响应头，系统自动降级为“模拟继承 + 直接读取父页策略”，并在此提示。
+      </p>
+
+      <h2>④ 默认允许列表（规范）</h2>
+      <div class="table-wrap">
+        <table class="matrix default-table">
+          <thead><tr><th>特性</th><th>default allowlist</th><th>Permissions API 名称</th></tr></thead>
+          <tbody id="defaults-body"></tbody>
+        </table>
+      </div>
+      <p class="tiny-note">
+        这五个特性默认值均为 <code>*</code>：策略默认放行，不代表免用户授权；自动播放还受浏览器媒体策略约束。
+      </p>
+    </section>
+
+    <!-- 中栏：可视化与运行时 -->
+    <section class="panel panel-runtime">
+      <h2>⑤ 策略继承 / 覆盖关系（Canvas）</h2>
+      <div class="row gap baseline">
+        <label class="inline">数据源：
+          <select id="view-source">
+            <option value="real">运行时实测（document.permissionsPolicy）</option>
+            <option value="sim">静态模拟（解析头 + allow 推导）</option>
+          </select>
+        </label>
+        <label class="inline">聚焦特性：
+          <select id="view-feature">
+            <option value="ALL">全部（汇总）</option>
+          </select>
+        </label>
+        <button id="btn-canvas-refresh">重绘</button>
+      </div>
+      <canvas id="tree-canvas"></canvas>
+      <div class="legend" id="canvas-legend"></div>
+
+      <h2>⑥ 生效策略矩阵（实测 vs 模拟）</h2>
+      <div class="table-wrap">
+        <table class="matrix" id="effective-table">
+          <thead>
+            <tr><th>特性</th><th>顶层</th><th>iframe A</th><th>iframe B</th><th>沙箱 S</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="discrepancy-note" class="feedback"></div>
+
+      <h2>⑦ 实测控制台</h2>
+      <p class="hint">
+        远程触发 camera / microphone / geolocation / autoplay；全屏需要用户手势，请直接点击框架内部按钮。
+        框架自身也带“实际调用测试”按钮。
+      </p>
+      <div class="test-bar" id="test-bar"></div>
+      <div class="frame-stage-wrap">
+        <div class="frame-stage-label">页面中的真实 iframe 树</div>
+        <div id="frame-stage" class="frame-stage"></div>
+      </div>
+
+      <h2>⑧ Web Worker 检测（运行时差异）</h2>
+      <div id="worker-panel" class="worker-panel">等待 Worker 启动…</div>
+
+      <h2>⑨ IndexedDB 日志</h2>
+      <div class="row gap">
+        <button id="btn-refresh-logs">刷新日志</button>
+        <button id="btn-clear-logs">清空</button>
+        <span id="log-count" class="tiny-note"></span>
+      </div>
+      <div id="log-list" class="log-list"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    建议用 Chrome/Edge 打开；Firefox/Safari 对 Permissions Policy 的支持差异会在页面上自动标注。
+    本地运行：<code>python3 -m http.server 8000</code> 后访问 <code>http://localhost:8000/</code>（安全上下文需要 http://localhost 或 https）。
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

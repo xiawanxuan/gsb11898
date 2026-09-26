@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SW 注入头沙箱 · Permissions Policy 演示</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="frame-body sandbox-body">
+  <header class="frame-header">
+    <strong>S · 响应头沙箱</strong>
+    <span class="badge badge-special">顶层头效果</span>
+  </header>
+
+  <section class="frame-allow">
+    <div class="frame-allow-title">
+      Service Worker 为本页响应注入的 <code>Permissions-Policy</code> 头
+      <span id="sw-state" class="badge"></span>
+    </div>
+    <code id="injected-header" class="allow-code">（等待读取…）</code>
+    <p class="tiny-note">
+      本框架没有父页面 <code>allow</code> 限制（父级始终以 <code>allow="*"</code> 委托），
+      因此这里的允许/拒绝完全由真正的 HTTP 响应头决定。改完头需要让 SW 更新缓存并重新加载本框架。
+    </p>
+  </section>
+
+  <section class="frame-grid" id="feature-grid"></section>
+
+  <script type="module" src="js/sandbox.js"></script>
+</body>
+</html>

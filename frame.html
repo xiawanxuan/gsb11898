@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>嵌套框架 · Permissions Policy 演示</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="frame-body">
+  <header class="frame-header">
+    <strong id="frame-id">框架</strong>
+    <span id="frame-depth" class="badge"></span>
+    <span id="frame-origin" class="frame-origin"></span>
+  </header>
+
+  <section class="frame-allow">
+    <div class="frame-allow-title">本框架的 <code>allow</code> 属性（容器策略）</div>
+    <code id="frame-allow-text" class="allow-code">（加载中…）</code>
+  </section>
+
+  <section class="frame-grid" id="feature-grid"></section>
+
+  <section id="child-slot-wrap" class="child-slot-wrap" hidden>
+    <div class="child-slot-title">嵌套子框架（父级生效策略继续向下委托的“第二道闸”）</div>
+    <div id="child-slot"></div>
+  </section>
+
+  <script type="module" src="js/frame.js"></script>
+</body>
+</html>
