@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>iframe 子页面</title>
+<style>
+  body { font: 13px/1.6 system-ui, sans-serif; margin: 0; padding: 12px; background: #0f172a; color: #e2e8f0; }
+  h3 { margin: 0 0 8px; font-size: 14px; color: #7dd3fc; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { border: 1px solid #334155; padding: 4px 8px; text-align: left; }
+  .ok { color: #4ade80; } .no { color: #f87171; } .warn { color: #fbbf24; }
+  #origin { word-break: break-all; color: #94a3b8; }
+</style>
+</head>
+<body>
+<h3>iframe 子上下文自检</h3>
+<div id="origin"></div>
+<table>
+  <thead><tr><th>特性</th><th>policy.allowsFeature</th><th>Permissions API</th></tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+<script src="js/policy.js"></script>
+<script>
+(function () {
+  'use strict';
+  const features = PolicyKit.KNOWN_FEATURES;
+  const policy = document.permissionsPolicy || document.featurePolicy || null;
+  document.getElementById('origin').textContent =
+    'origin: ' + location.origin + ' ｜ permissionsPolicy: ' + (policy ? '✓' : '✗（降级）');
+
+  const rows = document.getElementById('rows');
+  const report = { type: 'child-report', origin: location.origin, hasPolicy: !!policy, features: {} };
+
+  features.forEach(async function (f) {
+    let allows = null;
+    if (policy && typeof policy.allowsFeature === 'function') {
+      try { allows = policy.allowsFeature(f); } catch (e) { allows = 'error: ' + e.message; }
+    }
+    let permState = 'n/a';
+    const apiName = PolicyKit.FEATURES[f].permissionsApiName;
+    if (apiName && navigator.permissions && navigator.permissions.query) {
+      try { permState = (await navigator.permissions.query({ name: apiName })).state; }
+      catch (e) { permState = 'unsupported'; }
+    }
+    report.features[f] = { allows: allows, permState: permState };
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + f + '</td><td class="' + (allows === true ? 'ok' : allows === false ? 'no' : 'warn') + '">' +
+      String(allows) + '</td><td>' + permState + '</td>';
+    rows.appendChild(tr);
+    parent.postMessage(report, '*');
+  });
+})();
+</script>
+</body>
+</html>

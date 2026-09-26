@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Permissions Policy 策略演示台</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header>
+  <h1>Permissions Policy 策略演示台</h1>
+  <p>配置页面与 iframe 的特性策略，检测生效情况，模拟允许/拒绝，可视化继承与覆盖关系。</p>
+</header>
+
+<div id="toasts" aria-live="polite"></div>
+
+<main>
+  <!-- 环境支持检测 -->
+  <section class="card" id="support-card">
+    <h2>① 环境支持检测</h2>
+    <div id="support-grid" class="support-grid"></div>
+    <p class="hint" id="fallback-hint" hidden>⚠ 当前浏览器不支持 Permissions Policy 运行时接口，已降级为 Permissions API 查询 + 本地计算。</p>
+  </section>
+
+  <!-- 策略配置 -->
+  <section class="card">
+    <h2>② 策略配置（页面级 Permissions-Policy）</h2>
+    <div id="page-toggles" class="toggle-grid"></div>
+    <label class="field">
+      <span>策略文本（可手动编辑，实时校验语法）</span>
+      <textarea id="page-policy" rows="2" spellcheck="false"
+        placeholder='camera=(self), microphone=(), geolocation=(self "https://example.com"), fullscreen=*, autoplay=(self)'></textarea>
+    </label>
+    <div id="page-policy-errors" class="errors"></div>
+  </section>
+
+  <section class="card">
+    <h2>③ iframe 配置（allow 属性，会进一步收紧）</h2>
+    <div id="frame-toggles" class="toggle-grid"></div>
+    <label class="field">
+      <span>allow 属性文本</span>
+      <textarea id="frame-allow" rows="2" spellcheck="false" placeholder="camera 'self'; geolocation 'none'"></textarea>
+    </label>
+    <div id="frame-allow-errors" class="errors"></div>
+    <div class="actions">
+      <button id="apply-frame" type="button">应用并重建 iframe</button>
+      <span class="hint">iframe 加载 child.html，子页面会回传自身检测结果。</span>
+    </div>
+    <div class="frame-wrap"><iframe id="demo-frame" title="策略测试 iframe"></iframe></div>
+    <div id="child-report" class="report"></div>
+  </section>
+
+  <!-- 检测与模拟 -->
+  <section class="card">
+    <h2>④ 生效策略检测与允许/拒绝模拟</h2>
+    <div class="actions">
+      <button id="run-detect" type="button">运行检测</button>
+      <button id="run-worker" type="button">Worker 上下文检测</button>
+      <button id="save-config" type="button">保存配置到 IndexedDB</button>
+      <button id="load-config" type="button">读取已保存配置</button>
+    </div>
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th>特性</th><th>计算有效策略</th><th>document.permissionsPolicy</th>
+          <th>Permissions API（降级）</th><th>模拟请求结果</th><th>真实请求测试</th>
+        </tr>
+      </thead>
+      <tbody id="detect-rows"></tbody>
+    </table>
+    <div id="worker-report" class="report"></div>
+  </section>
+
+  <!-- 可视化 -->
+  <section class="card">
+    <h2>⑤ 继承 / 覆盖关系可视化</h2>
+    <div class="legend">
+      <span><i class="dot allow"></i>允许</span>
+      <span><i class="dot deny"></i>拒绝</span>
+      <span><i class="dot inherit"></i>继承默认</span>
+      <span><i class="dot override"></i>被覆盖收紧</span>
+    </div>
+    <div class="canvas-wrap"><canvas id="diagram"></canvas></div>
+  </section>
+
+  <!-- 日志 -->
+  <section class="card">
+    <h2>⑥ 检测日志（IndexedDB）</h2>
+    <div class="actions">
+      <button id="refresh-logs" type="button">刷新日志</button>
+      <button id="clear-logs" type="button">清空日志</button>
+    </div>
+    <ul id="log-list" class="log-list"></ul>
+  </section>
+</main>
+
+<script src="js/policy.js"></script>
+<script src="js/db.js"></script>
+<script src="js/diagram.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
